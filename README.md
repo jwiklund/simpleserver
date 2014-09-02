@@ -1,5 +1,5 @@
 A simple http file server with proxy support.
-Will proxy all files in the current directory as well as proxy requests listed in server.conf.
+Will serve all files in the current directory as well as proxy requests listed in server.conf.
 
 Eg, to proxy /google to www.google.com add the following in server.conf.
 
