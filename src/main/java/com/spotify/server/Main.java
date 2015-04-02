@@ -8,13 +8,21 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.resource.Resource;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 
 public class Main {
   public static void main(String[] args) throws Exception {
@@ -23,18 +31,50 @@ public class Main {
 
     HandlerList handlers = new HandlerList();
 
-    ResourceHandler resources = new ResourceHandler();
-    resources.setDirectoriesListed(true);
-    resources.setWelcomeFiles(new String[]{ "index.html" });
-    resources.setResourceBase(".");
-    handlers.addHandler(resources);
-
+    handlers.addHandler(configureResource(args));
     handlers.addHandler(configureProxy());
 
     Server server = new Server(8080);
     server.setHandler(handlers);
     server.start();
     server.join();
+  }
+
+  private static ResourceHandler configureResource(String[] args) throws ZipException, IOException {
+    ResourceHandler resources = new ResourceHandler();
+    resources.setDirectoriesListed(true);
+    resources.setWelcomeFiles(new String[]{ "index.html" });
+    if (args.length == 1) {
+      if (new File(args[0]).isDirectory()) {
+        resources.setResourceBase(args[0]);
+      } else {
+        resources.setBaseResource(configureZipResource(new File(args[0]).getAbsoluteFile()));
+      }
+    } else {
+      resources.setResourceBase(".");
+    }
+    return resources;
+  }
+
+  private static Resource configureZipResource(File zipFile) throws ZipException, IOException {
+    String resourceURL = "jar:" + zipFile.toURI().toURL() + "!/";
+
+    try (ZipFile zip = new ZipFile(zipFile)) {      
+      Set<String> topEntries = new HashSet<>();
+      for (Enumeration<? extends ZipEntry> entries = zip.entries(); entries.hasMoreElements() ; ) {
+        ZipEntry entry = entries.nextElement();
+        int index = entry.getName().indexOf('/');
+        if (index == -1) {
+          topEntries.add(entry.getName());
+        } else {
+          topEntries.add(entry.getName().substring(0, index));
+        }
+      }
+      if (topEntries.size() == 1) {
+        resourceURL = resourceURL + topEntries.iterator().next() + "/";
+      }
+    }
+    return Resource.newResource(resourceURL);
   }
 
   private static ServletContextHandler configureProxy() throws FileNotFoundException {
