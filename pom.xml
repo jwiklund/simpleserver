@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.spotify</groupId>
     <artifactId>simple-server</artifactId>
-    <version>0.2</version>
+    <version>0.3-SNAPSHOT</version>
     <dependencies>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
