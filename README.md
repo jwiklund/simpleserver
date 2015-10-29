@@ -1,3 +1,5 @@
+Note to self: Use devd instead https://github.com/cortesi/devd
+
 A simple http file server with proxy support.
 Will serve all files in the current directory, or the directory given as argument on the commandline as well as proxy requests listed in server.conf.
 
